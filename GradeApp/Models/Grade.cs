@@ -1,4 +1,6 @@
-﻿namespace GradeApp.Models
+﻿using System.Text.Json.Serialization;
+
+namespace GradeApp.Models
 {
     public class Grade
     {
@@ -7,12 +9,18 @@
         public DateTime Date { get; set; }
 
         public int StudentId { get; set; }
-        public virtual Student Student { get; set; }
+
+        [JsonIgnore]
+        public virtual Student? Student { get; set; }
 
         public int SubjectId { get; set; }
-        public virtual Subject Subject { get; set; }
+
+        [JsonIgnore]
+        public virtual Subject? Subject { get; set; }
 
         public int ProfessorId { get; set; }
-        public virtual Professor Professor { get; set; }
+
+        [JsonIgnore]
+        public virtual Professor? Professor { get; set; }
     }
 }

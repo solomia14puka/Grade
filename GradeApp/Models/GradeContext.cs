@@ -4,6 +4,10 @@ namespace GradeApp.Models
 {
     public class GradeContext : DbContext
     {
+        public GradeContext()
+        {
+            Database.EnsureCreated();
+        }
         public virtual DbSet<Faculty> Faculties { get; set; }
         public virtual DbSet<Department> Departments { get; set; }
         public virtual DbSet<Professor> Professors { get; set; }
@@ -11,10 +15,12 @@ namespace GradeApp.Models
         public virtual DbSet<Subject> Subjects { get; set; }
         public virtual DbSet<Grade> Grades { get; set; }
 
-        public GradeContext(DbContextOptions<GradeContext> options)
-            : base(options)
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            Database.EnsureCreated();
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=GradeDB;Trusted_Connection=True;MultipleActiveResultSets=true");
+            }
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

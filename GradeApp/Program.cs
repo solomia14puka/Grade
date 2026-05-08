@@ -1,13 +1,13 @@
-using GradeApp.Models;
+﻿using GradeApp.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using GradeApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDbContext<GradeContext>();
 // Add services to the container.
 
-builder.Services.AddDbContext<GradeContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddControllers();
 
 var app = builder.Build();

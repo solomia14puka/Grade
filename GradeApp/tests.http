@@ -1,0 +1,5 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+POST https://localhost:7035/api/Grades
+Content-Type: application/json
+
+
