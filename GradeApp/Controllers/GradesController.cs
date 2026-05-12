@@ -89,19 +89,19 @@ namespace GradeApp.Controllers
             var studentExists = await _context.Students.AnyAsync(s => s.Id == grade.StudentId);
             if (!studentExists)
             {
-                return BadRequest($"Студента з ID {grade.StudentId} не існує.");
+                return BadRequest($"Студента не існує.");
             }
 
             var subjectExists = await _context.Subjects.AnyAsync(s => s.Id == grade.SubjectId);
             if (!subjectExists)
             {
-                return BadRequest($"Предмета з ID {grade.SubjectId} не існує.");
+                return BadRequest($"Предмета не існує.");
             }
 
             var professorExists = await _context.Professors.AnyAsync(p => p.Id == grade.ProfessorId);
             if (!professorExists)
             {
-                return BadRequest($"Викладача з ID {grade.ProfessorId} не існує.");
+                return BadRequest($"Викладача не існує.");
             }
             if (grade.Date == default)
             {
@@ -122,13 +122,19 @@ namespace GradeApp.Controllers
             var grade = await _context.Grades.FindAsync(id);
             if (grade == null)
             {
-                return NotFound();
+                return NotFound("Оцінку не знайдено.");
             }
 
-            _context.Grades.Remove(grade);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            try
+            {
+                _context.Grades.Remove(grade);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest("Помилка при видаленні оцінки.");
+            }
         }
 
         private bool GradeExists(int id)

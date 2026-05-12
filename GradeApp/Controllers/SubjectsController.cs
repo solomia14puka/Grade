@@ -101,13 +101,19 @@ namespace GradeApp.Controllers
             var subject = await _context.Subjects.FindAsync(id);
             if (subject == null)
             {
-                return NotFound();
+                return NotFound("Предмет не знайдено.");
             }
 
-            _context.Subjects.Remove(subject);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            try
+            {
+                _context.Subjects.Remove(subject);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest("Предмет неможливо видалити.");
+            }
         }
 
         private bool SubjectExists(int id)

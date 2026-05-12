@@ -78,9 +78,14 @@ namespace GradeApp.Controllers
         [HttpPost]
         public async Task<ActionResult<Department>> PostDepartment(Department department)
         {
+            bool facultyExists = await _context.Faculties.AnyAsync(f => f.Id == department.FacultyId);
+            if (!facultyExists)
+            {
+                return BadRequest($"Факультету не існує.");
+            }
+
             _context.Departments.Add(department);
             await _context.SaveChangesAsync();
-
             return CreatedAtAction("GetDepartment", new { id = department.Id }, department);
         }
 
@@ -91,13 +96,22 @@ namespace GradeApp.Controllers
             var department = await _context.Departments.FindAsync(id);
             if (department == null)
             {
-                return NotFound();
+                return NotFound("Запис не знайдено.");
             }
 
             _context.Departments.Remove(department);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            try
+            {
+                _context.Departments.Remove(department);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                return BadRequest("Неможливо видалити цей запис.");
+            }
         }
 
         private bool DepartmentExists(int id)

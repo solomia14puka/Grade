@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Управління студентами</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            argin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Управління студентами</h1>
+
+    <div id="loginBlock">
+        <h3>Вхід у систему</h3>
+        <form action="javascript:void(0);" onsubmit="login()">
+            <div class="form-group">
+                <input type="text" id="login-name" placeholder="Ваше ПІБ" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="login-password" placeholder="Пароль" required>
+            </div>
+            <button type="submit">Увійти</button>
+            <p id="login-error" style="color:red"></p>
+        </form>
+    </div>
+
+    <div id="mainContent" style="display:none;">
+        <button onclick="logout()">Вийти з акаунту</button>
+        <hr>
+
+        <h3>Додати нового студента</h3>
+        <form action="javascript:void(0);" onsubmit="addStudent()">
+            <input type="text" id="add-name" placeholder="ПІБ студента" required>
+            <input type="password" id="add-password" placeholder="Пароль" required>
+            <select id="add-department" required>
+                <option value="" disabled selected>Оберіть кафедру</option>
+            </select>
+            <button type="submit">Додати</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ПІБ</th>
+                    <th>Кафедра</th> 
+                    <th>Дії</th>
+                </tr>
+            </thead>
+            <tbody id="studentsTable"></tbody>
+        </table>
+    </div>
+
+    <script src="js/lab2.js"></script>
+</body>
+</html>

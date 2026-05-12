@@ -78,6 +78,11 @@ namespace GradeApp.Controllers
         [HttpPost]
         public async Task<ActionResult<Student>> PostStudent(Student student)
         {
+            var departmentExists = await _context.Departments.AnyAsync(d => d.Id == student.DepartmentId);
+            if (!departmentExists)
+            {
+                return BadRequest("Обраної кафедри не існує в базі даних!");
+            }
             _context.Students.Add(student);
             await _context.SaveChangesAsync();
 
@@ -91,13 +96,19 @@ namespace GradeApp.Controllers
             var student = await _context.Students.FindAsync(id);
             if (student == null)
             {
-                return NotFound();
+                return NotFound("Студента не знайдено.");
             }
 
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            try
+            {
+                _context.Students.Remove(student);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest("Неможливо видалити студента.");
+            }
         }
 
         private bool StudentExists(int id)

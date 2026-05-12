@@ -89,15 +89,18 @@ namespace GradeApp.Controllers
         public async Task<IActionResult> DeleteProfessor(int id)
         {
             var professor = await _context.Professors.FindAsync(id);
-            if (professor == null)
+            if (professor == null) return NotFound("Викладача не знайдено.");
+
+            try
             {
-                return NotFound();
+                _context.Professors.Remove(professor);
+                await _context.SaveChangesAsync();
+                return NoContent();
             }
-
-            _context.Professors.Remove(professor);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (DbUpdateException)
+            {
+                return BadRequest("Неможливо видалити викладача.");
+            }
         }
 
         private bool ProfessorExists(int id)

@@ -101,13 +101,19 @@ namespace GradeApp.Controllers
             var faculty = await _context.Faculties.FindAsync(id);
             if (faculty == null)
             {
-                return NotFound();
+                return NotFound("Факультет не знайдено.");
             }
 
-            _context.Faculties.Remove(faculty);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            try
+            {
+                _context.Faculties.Remove(faculty);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest("Неможливо видалити факультет.");
+            }
         }
 
         private bool FacultyExists(int id)
