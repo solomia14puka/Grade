@@ -98,6 +98,12 @@ namespace GradeApp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFaculty(int id)
         {
+            bool hasDepartments = await _context.Departments.AnyAsync(d => d.FacultyId == id);
+            if (hasDepartments)
+            {
+                return BadRequest("Спочатку видаліть або перенесіть усі кафедри, які належать факультету.");
+            }
+
             var faculty = await _context.Faculties.FindAsync(id);
             if (faculty == null)
             {

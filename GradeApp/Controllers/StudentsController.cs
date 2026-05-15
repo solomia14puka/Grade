@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using GradeApp.Data;
+using GradeApp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using GradeApp.Data;
-using GradeApp.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace GradeApp.Controllers
 {
@@ -93,6 +95,12 @@ namespace GradeApp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteStudent(int id)
         {
+            bool hasGrades = await _context.Grades.AnyAsync(g => g.StudentId == id);
+            if (hasGrades)
+            {
+                return BadRequest("Неможливо видалити студента, він завжди з нами.");
+            }
+
             var student = await _context.Students.FindAsync(id);
             if (student == null)
             {
@@ -154,7 +162,7 @@ namespace GradeApp.Controllers
             var averageGrade = await _context.Grades
                 .Where(g => g.StudentId == id)
                 .Select(g => g.Value)
-                .DefaultIfEmpty(0) 
+                .DefaultIfEmpty(0)
                 .AverageAsync();
 
             var certificate = new
@@ -173,6 +181,27 @@ namespace GradeApp.Controllers
             };
 
             return Ok(certificate);
+        }
+
+        [HttpGet("me")]
+        [Authorize(Roles = "Student")]
+        public async Task<ActionResult<object>> GetCurrentStudentInfo()
+        {
+            var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            var student = await _context.Students
+                .Include(s => s.Department)
+                .ThenInclude(d => d.Faculty)
+                .FirstOrDefaultAsync(s => s.FullName == userName);
+
+            if (student == null) return NotFound("Студента не знайдено.");
+
+            return Ok(new
+            {
+                FullName = student.FullName,
+                DepartmentName = student.Department.Name,
+                FacultyName = student.Department.Faculty.Name
+            });
         }
     }
 }

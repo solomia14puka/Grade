@@ -47,6 +47,14 @@ namespace GradeApp.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutDepartment(int id, Department department)
         {
+            bool hasProfessors = await _context.Professors.AnyAsync(p => p.DepartmentId == id);
+            bool hasStudents = await _context.Students.AnyAsync(s => s.DepartmentId == id);
+
+            if (hasProfessors || hasStudents)
+            {
+                return BadRequest("До кафедри все ще прив'язані викладачі або студенти.");
+            }
+
             if (id != department.Id)
             {
                 return BadRequest();
@@ -81,7 +89,7 @@ namespace GradeApp.Controllers
             bool facultyExists = await _context.Faculties.AnyAsync(f => f.Id == department.FacultyId);
             if (!facultyExists)
             {
-                return BadRequest($"Факультету не існує.");
+                return BadRequest("Факультету не існує.");
             }
 
             _context.Departments.Add(department);
@@ -93,6 +101,14 @@ namespace GradeApp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
+            bool hasProfessors = await _context.Professors.AnyAsync(p => p.DepartmentId == id);
+            bool hasStudents = await _context.Students.AnyAsync(s => s.DepartmentId == id);
+
+            if (hasProfessors || hasStudents)
+            {
+                return BadRequest("Тут ще є люди, ну кудиии.");
+            }
+
             var department = await _context.Departments.FindAsync(id);
             if (department == null)
             {

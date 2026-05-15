@@ -1,13 +1,8 @@
-﻿using GradeApp.Data;
-using GradeApp.Models;
+﻿using GradeApp.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace GradeApp.Controllers
 {
@@ -54,6 +49,11 @@ namespace GradeApp.Controllers
                 return BadRequest();
             }
 
+            var valid = await _context.Students.AnyAsync(s => s.Id == grade.StudentId) &&
+                await _context.Subjects.AnyAsync(s => s.Id == grade.SubjectId) &&
+                await _context.Professors.AnyAsync(p => p.Id == grade.ProfessorId);
+
+            if (!valid) return BadRequest("Помилка введення");
             _context.Entry(grade).State = EntityState.Modified;
 
             try
@@ -200,28 +200,30 @@ namespace GradeApp.Controllers
             return Ok(result);
         }
 
-        [Authorize]
-        [HttpGet("student/{studentId}")]
-        public async Task<ActionResult<IEnumerable<object>>> GetStudentGrades(int studentId)
+        [Authorize(Roles = "Student")]
+        [HttpGet("my")]
+        public async Task<ActionResult<IEnumerable<object>>> GetMyGrades()
         {
-            var studentExists = await _context.Students.AnyAsync(s => s.Id == studentId);
-            if (!studentExists)
+            var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.FullName == userName);
+
+            if (student == null)
             {
-                return NotFound($"Студента з ID {studentId} не знайдено.");
+                return NotFound("Студента не знайдено.");
             }
 
             var grades = await _context.Grades
-                .Where(g => g.StudentId == studentId)
+                .Where(g => g.StudentId == student.Id)
                 .Include(g => g.Subject)
                 .Include(g => g.Professor)
-                .OrderByDescending(g => g.Date) 
+                .OrderByDescending(g => g.Date)
                 .Select(g => new
                 {
                     GradeId = g.Id,
-                    Subject = g.Subject.Name,
+                    SubjectName = g.Subject.Name,
                     Value = g.Value,
                     Date = g.Date,
-                    Professor = g.Professor.FullName
+                    ProfessorName = g.Professor.FullName
                 })
                 .ToListAsync();
 
@@ -229,48 +231,56 @@ namespace GradeApp.Controllers
         }
 
         [Authorize(Roles = "Student")]
-        [HttpGet("student/{studentId}/dynamics")]
-        public async Task<ActionResult<object>> GetStudentDynamics(int studentId)
+        [HttpGet("my/dynamics")]
+        public async Task<ActionResult<object>> GetMyDynamics()
         {
-            var studentExists = await _context.Students.AnyAsync(s => s.Id == studentId);
-            if (!studentExists)
+            var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.FullName == userName);
+
+            if (student == null)
             {
-                return NotFound($"Студента з ID {studentId} не знайдено.");
+                return NotFound("Студента не знайдено.");
             }
 
             var grades = await _context.Grades
-                .Where(g => g.StudentId == studentId)
+                .Where(g => g.StudentId == student.Id)
                 .OrderBy(g => g.Date)
                 .ToListAsync();
 
             if (!grades.Any())
             {
-                return Ok(new { Message = "У цього студента ще немає жодної оцінки." });
+                return Ok(new List<object>());
             }
-
-            var averageGrade = grades.Average(g => g.Value);
-            var maxGrade = grades.Max(g => g.Value);
-            var minGrade = grades.Min(g => g.Value);
 
             var monthlyProgression = grades
                 .GroupBy(g => new { g.Date.Year, g.Date.Month })
                 .Select(group => new
                 {
                     Period = $"{group.Key.Month:D2}/{group.Key.Year}",
-                    AverageScore = Math.Round(group.Average(g => g.Value), 2),
-                    GradesCount = group.Count()
+                    AverageValue = Math.Round(group.Average(g => g.Value), 2)
                 })
                 .ToList();
+            return Ok(monthlyProgression);
+        }
 
-            return Ok(new
-            {
-                StudentId = studentId,
-                TotalGrades = grades.Count,
-                OverallAverage = Math.Round(averageGrade, 2),
-                HighestGrade = maxGrade,
-                LowestGrade = minGrade,
-                ProgressionByMonth = monthlyProgression
-            });
+        [HttpGet("student/{id}")]
+        [Authorize(Roles = "Professor")]
+        public async Task<ActionResult<IEnumerable<object>>> GetStudentGradesAdmin(int id)
+        {
+            var grades = await _context.Grades
+                .Include(g => g.Subject)
+                .Include(g => g.Professor)
+                .Where(g => g.StudentId == id)
+                .Select(g => new {
+                    g.Value,
+                    SubjectName = g.Subject.Name,
+                    Date = g.Date,
+                    ProfessorName = g.Professor.FullName
+                })
+                .OrderByDescending(g => g.Date)
+                .ToListAsync();
+
+            return Ok(grades);
         }
     }
 }

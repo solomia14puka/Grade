@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using GradeApp.Data;
+using GradeApp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using GradeApp.Data;
-using GradeApp.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace GradeApp.Controllers
 {
@@ -78,6 +80,12 @@ namespace GradeApp.Controllers
         [HttpPost]
         public async Task<ActionResult<Professor>> PostProfessor(Professor professor)
         {
+            bool departmentExists = await _context.Departments.AnyAsync(d => d.Id == professor.DepartmentId);
+            if (!departmentExists)
+            {
+                return BadRequest("Кафедри не існує в базі даних.");
+            }
+
             _context.Professors.Add(professor);
             await _context.SaveChangesAsync();
 
@@ -103,6 +111,26 @@ namespace GradeApp.Controllers
             }
         }
 
+        [HttpGet("me")]
+        [Authorize(Roles = "Professor")]
+        public async Task<ActionResult<object>> GetCurrentProfessorInfo()
+        {
+            var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            var prof = await _context.Professors
+                .Include(p => p.Department)
+                .ThenInclude(d => d.Faculty)
+                .FirstOrDefaultAsync(p => p.FullName == userName);
+
+            if (prof == null) return NotFound("Викладача не знайдено.");
+
+            return Ok(new
+            {
+                FullName = prof.FullName,
+                DepartmentName = prof.Department.Name,
+                FacultyName = prof.Department.Faculty.Name
+            });
+        }
         private bool ProfessorExists(int id)
         {
             return _context.Professors.Any(e => e.Id == id);

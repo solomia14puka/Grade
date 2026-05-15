@@ -1,5 +1,10 @@
 # For more info on HTTP files go to https://aka.ms/vs/httpfile
-POST https://localhost:7035/api/Grades
+POST https://localhost:7035/api/Professors
 Content-Type: application/json
 
-
+{
+  "FullName": "Омельчук Л. Л.",
+  "Password": "password123",
+  "DepartmentId": 2,
+  "Position": "Professor"
+}

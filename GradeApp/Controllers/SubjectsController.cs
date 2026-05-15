@@ -98,6 +98,12 @@ namespace GradeApp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSubject(int id)
         {
+            bool hasGrades = await _context.Grades.AnyAsync(g => g.SubjectId == id);
+            if (hasGrades)
+            {
+                return BadRequest("Ну кудииии, хтось ж має оцінки за цей предмет.");
+            }
+
             var subject = await _context.Subjects.FindAsync(id);
             if (subject == null)
             {
